@@ -12,9 +12,7 @@ const Index = () => {
 	const [showImagePopup, setShowImagePopup] = useState(false);
 	const [popupImageSrc, setPopupImageSrc] = useState("");
 	const [founderEmail, setFounderEmail] = useState("");
-	const [founderEmailState, setFounderEmailState] = useState<
-		"idle" | "submitting" | "success" | "error"
-	>("idle");
+	const [founderEmailState, setFounderEmailState] = useState<"idle" | "submitting" | "success" | "error">("idle");
 	const router = useRouter();
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -369,13 +367,11 @@ const Index = () => {
 
 						<div className="mt-10 pt-8 border-t border-gray-200 dark:border-gray-700 text-left max-w-xl mx-auto">
 							<p className="text-sm text-foreground/70 mb-3">
-								Get behind-the-scenes email updates from the founder. Cat pictures are just as
-								likely as screenshots of features I&apos;m thinking about.
+								Get behind-the-scenes email updates from the founder. Cat pictures are just as likely as
+								screenshots of features I&apos;m thinking about.
 							</p>
 							{founderEmailState === "success" ? (
-								<p className="text-sm text-primary font-medium">
-									Thanks — see you in your inbox.
-								</p>
+								<p className="text-sm text-primary font-medium">Thanks — see you in your inbox.</p>
 							) : (
 								<form className="flex flex-col sm:flex-row gap-2" onSubmit={handleFounderSignup}>
 									<Input

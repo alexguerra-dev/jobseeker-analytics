@@ -18,8 +18,8 @@ export default function FounderUpdatesOptIn({ checked, onChange }: Props) {
 			size="sm"
 			onValueChange={onChange}
 		>
-			Get behind-the-scenes email updates from the founder. Cat pictures are just as likely as
-			screenshots of features I&apos;m thinking about.
+			Get behind-the-scenes email updates from the founder. Cat pictures are just as likely as screenshots of
+			features I&apos;m thinking about.
 		</Checkbox>
 	);
 }

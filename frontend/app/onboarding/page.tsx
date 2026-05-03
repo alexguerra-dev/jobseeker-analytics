@@ -997,10 +997,7 @@ function OnboardingContent() {
 								Your entire search fits within your free window — nothing will be hidden.
 							</p>
 							<div className="mb-4 text-left">
-								<FounderUpdatesOptIn
-									checked={founderUpdatesOptIn}
-									onChange={setFounderUpdatesOptIn}
-								/>
+								<FounderUpdatesOptIn checked={founderUpdatesOptIn} onChange={setFounderUpdatesOptIn} />
 							</div>
 							<Button className="w-full" color="primary" size="lg" onPress={handleGoToDashboard}>
 								Go to my dashboard →
@@ -1059,10 +1056,7 @@ function OnboardingContent() {
 								is always exportable via CSV.
 							</div>
 							<div className="mb-4 text-left">
-								<FounderUpdatesOptIn
-									checked={founderUpdatesOptIn}
-									onChange={setFounderUpdatesOptIn}
-								/>
+								<FounderUpdatesOptIn checked={founderUpdatesOptIn} onChange={setFounderUpdatesOptIn} />
 							</div>
 							<Button className="w-full mb-3" color="primary" size="lg" onPress={handleGoToDashboard}>
 								Go to my dashboard →
