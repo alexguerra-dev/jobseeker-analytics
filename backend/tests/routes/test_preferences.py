@@ -3,10 +3,29 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+import pytest
 from sqlmodel import select
 
 from db.users import Users
 from db.utils.user_utils import user_exists
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiting():
+    """SlowAPI counters share a single in-process store across tests, so the
+    real-world limits would block legitimate test traffic. Disable per-test."""
+    from routes.preferences_routes import limiter
+
+    limiter.enabled = False
+    yield
+    limiter.enabled = True
+
+
+def _strip_tz(dt):
+    """SQLite's DateTime backend drops tzinfo; normalize for equality checks."""
+    if dt is None:
+        return None
+    return dt.replace(tzinfo=None) if dt.tzinfo else dt
 
 
 class TestEmailMarketingConsent:
@@ -185,7 +204,7 @@ class TestEmailSignup:
 
         db_session.refresh(existing)
         assert existing.email_marketing_consent is True
-        assert existing.email_marketing_consent_at == original_ts
+        assert _strip_tz(existing.email_marketing_consent_at) == _strip_tz(original_ts)
 
     def test_no_duplicate_row_on_repeat_signup(
         self, incognito_client, db_session
