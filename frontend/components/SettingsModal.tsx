@@ -491,18 +491,18 @@ export default function SettingsModal({ isOpen, onClose, onSubscriptionChange }:
 									</p>
 								) : !status.is_premium ? (
 									<p className="text-sm text-foreground/60 dark:text-gray-400">
-										Upgrade to unlock automatic background sync
+										Upgrade to unlock automatic updates
 									</p>
 								) : null}
 							</div>
 
-							{/* Background Sync */}
+							{/* Automatic updates */}
 							<div className="border-t border-divider dark:border-[#3d5a3d] pt-4">
 								<div className="flex items-center justify-between">
 									<div className={!status.is_premium ? "opacity-50" : ""}>
-										<p className="font-medium text-foreground dark:text-white">Background sync</p>
+										<p className="font-medium text-foreground dark:text-white">Automatic updates</p>
 										<p className="text-sm text-foreground/60 dark:text-gray-400">
-											Emails sync automatically every 12 hours
+											We check your email twice a day so you never miss another recruiter message
 										</p>
 									</div>
 									{status.is_premium ? (
@@ -580,14 +580,14 @@ export default function SettingsModal({ isOpen, onClose, onSubscriptionChange }:
 								<div className="flex items-center justify-between gap-4">
 									<div>
 										<p className="font-medium text-foreground dark:text-white">
-											Email updates from the founder
+											Emails from Lianna
 										</p>
 										<p className="text-sm text-foreground/60 dark:text-gray-400">
-											Behind-the-scenes notes via email from Lianna. May include cat pictures.
+											Occasional questions about your experience and new feature updates
 										</p>
 									</div>
 									<Switch
-										aria-label="Email updates from the founder"
+										aria-label="Emails from Lianna"
 										isDisabled={isUpdatingConsent}
 										isSelected={emailMarketingConsent}
 										onValueChange={handleConsentChange}
