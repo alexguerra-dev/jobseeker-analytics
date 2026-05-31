@@ -502,7 +502,8 @@ export default function SettingsModal({ isOpen, onClose, onSubscriptionChange }:
 									<div className={!status.is_premium ? "opacity-50" : ""}>
 										<p className="font-medium text-foreground dark:text-white">Automatic updates</p>
 										<p className="text-sm text-foreground/80 text-white dark:text-gray-300">
-											We check your email twice a day so you <br></br>stop missing recruiter messages
+											We check your email twice a day so you <br />stop missing recruiter
+											messages
 										</p>
 									</div>
 									{status.is_premium ? (

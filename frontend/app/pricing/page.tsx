@@ -314,9 +314,8 @@ function PricingContent() {
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300">
 									Free users see the last 30 days of job application emails in their dashboard. Your
-									full history is stored and unlocks immediately when you upgrade.
-									And regardless of your plan, you can always export everything we’ve ever processed
-									for you via CSV.
+									full history is stored and unlocks immediately when you upgrade. And regardless of
+									your plan, you can always export everything we’ve ever processed for you via CSV.
 								</p>
 							</div>
 							<div>
@@ -324,9 +323,9 @@ function PricingContent() {
 									Is there a limit on how many emails get scanned?
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300">
-									Free accounts scan up to 500 emails per month, which resets on the 1st. <br></br> Premium
-									accounts have a higher monthly buffer to keep our costs predictable — <br></br> if you’re
-									hitting limits, email{" "}
+									Free accounts scan up to 500 emails per month, which resets on the 1st. <br />{" "}
+									Premium accounts have a higher monthly buffer to keep our costs predictable —{" "}
+									<br /> if you’re hitting limits, email{" "}
 									<a className="underline" href="mailto:help@justajobapp.com">
 										help@justajobapp.com
 									</a>{" "}
@@ -338,8 +337,8 @@ function PricingContent() {
 									What are automatic updates?
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300">
-									We check your email twice a day to stop you from missing recruiter messages. 
-									<br></br>Your dashboard stays current without you having to manually refresh.
+									We check your email twice a day to stop you from missing recruiter messages.
+									<br />Your dashboard stays current without you having to manually refresh.
 								</p>
 							</div>
 							<div>
@@ -347,8 +346,8 @@ function PricingContent() {
 									Can I cancel anytime?
 								</h3>
 								<p className="text-gray-600 dark:text-gray-300">
-									Yes! You can cancel your subscription at any time in the Settings menu ⚙️. You'll keep premium features
-									until the end of your billing period.
+									Yes! You can cancel your subscription at any time in the Settings menu ⚙️. You'll
+									keep premium features until the end of your billing period.
 								</p>
 							</div>
 							<div>
