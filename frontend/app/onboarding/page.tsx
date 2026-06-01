@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import posthog from "posthog-js";
 
+import FounderEmailCapture from "@/components/FounderEmailCapture";
 import { GoogleIcon } from "@/components/icons";
 import { Navbar } from "@/components/navbar";
 import Spinner from "@/components/spinner";
@@ -20,8 +21,7 @@ type Screen =
 	| "step3"
 	| "step3.5"
 	| "step4-scanning"
-	| "step4a-i"
-	| "step4a-ii"
+	| "step4a-done"
 	| "step4b-i"
 	| "step4b-ii"
 	| "empty-state";
@@ -49,6 +49,37 @@ function daysAgoDate(days: number) {
 	const d = new Date();
 	d.setDate(d.getDate() - days);
 	return d;
+}
+
+function statusPillClass(status: string) {
+	switch (status?.toLowerCase()) {
+		case "rejection":
+			return "bg-red-100 text-red-800 dark:bg-red-600 dark:text-white";
+		case "offer made":
+			return "bg-green-100 text-green-800 dark:bg-success dark:text-white";
+		case "application confirmation":
+			return "bg-blue-100 text-blue-800 dark:bg-primary dark:text-white";
+		case "availability request":
+			return "bg-emerald-100 text-emerald-800 dark:bg-emerald-600 dark:text-white";
+		case "information request":
+			return "bg-teal-100 text-teal-800 dark:bg-teal-600 dark:text-white";
+		case "assessment sent":
+			return "bg-yellow-100 text-yellow-800 dark:bg-yellow-600 dark:text-white";
+		case "interview invitation":
+			return "bg-cyan-100 text-cyan-800 dark:bg-cyan-600 dark:text-white";
+		case "did not apply - inbound request":
+			return "bg-purple-100 text-purple-800 dark:bg-purple-600 dark:text-white";
+		case "action required from company":
+			return "bg-lime-100 text-lime-800 dark:bg-lime-600 dark:text-white";
+		case "hiring freeze notification":
+			return "bg-orange-100 text-orange-800 dark:bg-orange-600 dark:text-white";
+		case "withdrew application":
+			return "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-600 dark:text-white";
+		case "outreach":
+			return "bg-indigo-100 text-indigo-800 dark:bg-indigo-600 dark:text-white";
+		default:
+			return "bg-zinc-200 text-zinc-800 dark:bg-zinc-600 dark:text-white";
+	}
 }
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
@@ -108,6 +139,9 @@ function OnboardingContent() {
 	const [previewLimited, setPreviewLimited] = useState(false);
 	const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 	const [previewError, setPreviewError] = useState<string | null>(null);
+
+	// Email capture submitted state (shown on step4a-done and empty-state)
+	const [emailSubmitted, setEmailSubmitted] = useState(false);
 
 	// Step 4 state
 	const [applicationsFound, setApplicationsFound] = useState(0);
@@ -175,8 +209,7 @@ function OnboardingContent() {
 						if (found === 0) {
 							setScreen("empty-state");
 						} else if (currentRole === "jobseeker") {
-							const withinWindow = startDateForCheck === null || startDateForCheck >= daysAgoDate(30);
-							setScreen(withinWindow ? "step4a-i" : "step4a-ii");
+							setScreen("step4a-done");
 						} else {
 							setScreen(currentPlan === "promo" ? "step4b-i" : "step4b-ii");
 						}
@@ -264,6 +297,34 @@ function OnboardingContent() {
 				return;
 			}
 
+			// Jobseekers: auto-start a 30-day scan instead of routing to the date picker
+			if (currentRole === "jobseeker") {
+				try {
+					await fetch(`${apiUrl}/settings/start-date`, {
+						method: "PUT",
+						credentials: "include",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							preset: "1_month",
+							fetch_order: "recent_first",
+							end_date: null
+						})
+					});
+					posthog.capture("onboarding_scan_started", {
+						role: "jobseeker",
+						plan: status.plan ?? "free",
+						source: "auto"
+					});
+					setScreen("step4-scanning");
+					startPolling(daysAgoDate(30), "jobseeker", status.plan ?? "free");
+				} catch {
+					// Fall back to the manual date picker on failure
+					setScreen("step3");
+				}
+				return;
+			}
+
+			// Coaches still pick a date range manually
 			setScreen("step3");
 		};
 
@@ -562,7 +623,7 @@ function OnboardingContent() {
 				<Navbar />
 				<main className="flex-grow flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 					<Card>
-						<ProgressBar step={1} />
+						<ProgressBar step={1} total={isCoach ? 3 : 2} />
 						<h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
 							{isCoach ? "Connect the Gmail from your past job search" : "Connect your inbox"}
 						</h1>
@@ -879,19 +940,24 @@ function OnboardingContent() {
 
 	// Screen 4 — Scanning
 	if (screen === "step4-scanning") {
+		const isJobseeker = role === "jobseeker";
 		// Calculate actual scan range for display
 		const thirtyDaysAgo = daysAgoDate(30);
-		// Free users selecting > 30 days get capped to last 30 days
+		// Jobseekers always scan the last 30 days; coaches pick their own range.
 		const isFreeWithLimitedRange = plan === "free" && savedStartDate && savedStartDate < thirtyDaysAgo;
-		const effectiveScanStart = isFreeWithLimitedRange ? thirtyDaysAgo : savedStartDate;
-		const effectiveScanEnd = savedEndDate ? new Date(savedEndDate) : new Date();
+		const effectiveScanStart = isJobseeker
+			? thirtyDaysAgo
+			: isFreeWithLimitedRange
+				? thirtyDaysAgo
+				: savedStartDate;
+		const effectiveScanEnd = isJobseeker ? new Date() : savedEndDate ? new Date(savedEndDate) : new Date();
 
 		return (
 			<>
 				<Navbar />
 				<main className="flex-grow flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 					<Card>
-						<ProgressBar step={3} />
+						<ProgressBar step={isJobseeker ? 1 : 3} total={isJobseeker ? 2 : 3} />
 						<div className="text-center">
 							<Spinner />
 							<h1 className="text-xl font-bold text-gray-900 dark:text-white mt-4 mb-2">
@@ -937,126 +1003,74 @@ function OnboardingContent() {
 		);
 	}
 
-	// Screen 4A-i — Job seeker, within 30 days
-	if (screen === "step4a-i") {
-		return (
-			<>
-				<Navbar />
-				<main className="flex-grow flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-					<Card>
-						<ProgressBar step={3} />
-						<div className="text-center">
-							<div className="text-4xl mb-3">✓</div>
-							<h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-								You&apos;re all set
-							</h1>
-							<p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
-								We found{" "}
-								<span className="font-semibold text-gray-700 dark:text-gray-300">
-									{applicationsFound} job-related email
-									{applicationsFound !== 1 ? "s" : ""}
-								</span>
-							</p>
-							{foundEmailsPreview.length > 0 && (
-								<div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4 text-left">
-									<ul className="space-y-2">
-										{foundEmailsPreview.map((email, idx) => (
-											<li key={idx} className="flex justify-between text-sm">
-												<span className="text-gray-700 dark:text-gray-300 truncate mr-2">
-													{email.company_name}
-												</span>
-												<span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-													{email.application_status}
-												</span>
-											</li>
-										))}
-									</ul>
-									{applicationsFound > foundEmailsPreview.length && (
-										<p className="text-xs text-gray-400 mt-2 text-center">
-											+{applicationsFound - foundEmailsPreview.length} more
-										</p>
-									)}
-								</div>
-							)}
-							<p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-								Your entire search fits within your free window — nothing will be hidden.
-							</p>
-							<Button className="w-full" color="primary" size="lg" onPress={handleGoToDashboard}>
-								Go to my dashboard →
-							</Button>
-						</div>
-					</Card>
-				</main>
-			</>
-		);
-	}
+	// Screen 4A-done — Job seeker results + email capture (replaces step4a-i / step4a-ii)
+	if (screen === "step4a-done") {
+		const previewLimit = 4;
+		const visiblePreview = foundEmailsPreview.slice(0, previewLimit);
+		const remaining = Math.max(0, applicationsFound - visiblePreview.length);
 
-	// Screen 4A-ii — Job seeker, beyond 30 days
-	if (screen === "step4a-ii") {
 		return (
 			<>
 				<Navbar />
 				<main className="flex-grow flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 					<Card>
-						<ProgressBar step={3} />
-						<div className="text-center">
-							<div className="text-4xl mb-3">✓</div>
-							<h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-								You&apos;re all set
-							</h1>
-							<p className="text-gray-500 dark:text-gray-400 text-sm mb-3">
-								We found{" "}
-								<span className="font-semibold text-gray-700 dark:text-gray-300">
-									{applicationsFound} job-related email
-									{applicationsFound !== 1 ? "s" : ""}
-								</span>
-							</p>
-							{foundEmailsPreview.length > 0 && (
-								<div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4 text-left">
-									<ul className="space-y-2">
-										{foundEmailsPreview.map((email, idx) => (
-											<li key={idx} className="flex justify-between text-sm">
-												<span className="text-gray-700 dark:text-gray-300 truncate mr-2">
-													{email.company_name}
-												</span>
-												<span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
-													{email.application_status}
-												</span>
-											</li>
-										))}
-									</ul>
-									{applicationsFound > foundEmailsPreview.length && (
-										<p className="text-xs text-gray-400 mt-2 text-center">
-											+{applicationsFound - foundEmailsPreview.length} more
-										</p>
-									)}
-								</div>
-							)}
-							<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-5 text-sm text-blue-800 dark:text-blue-200 text-left">
-								Free accounts show the most recent 30 days in the dashboard. As your search continues,
-								your view stays current — older entries roll out as new ones come in. Your full history
-								is always exportable via CSV.
+						<ProgressBar step={2} total={2} />
+						<div className="text-center mb-5">
+							<div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success text-3xl">
+								✓
 							</div>
-							<Button className="w-full mb-3" color="primary" size="lg" onPress={handleGoToDashboard}>
-								Go to my dashboard →
-							</Button>
-							<Button
-								className="w-full mb-3"
-								color="secondary"
-								size="lg"
-								variant="flat"
-								onPress={handleUpgrade}
-							>
-								Upgrade to Premium — $5/mo
-							</Button>
-							<p className="text-xs text-gray-400">
-								You can{" "}
-								<button className="underline text-blue-500" onClick={handleGoToDashboard}>
-									export all your data to CSV
-								</button>{" "}
-								at any time, for free.
+							<h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+								Your dashboard is ready
+							</h1>
+							<p className="text-gray-500 dark:text-gray-400 text-sm">
+								<span className="font-semibold text-gray-800 dark:text-gray-100">
+									{applicationsFound} recruiter message
+									{applicationsFound !== 1 ? "s" : ""}
+								</span>{" "}
+								found in the last 30 days
 							</p>
 						</div>
+
+						{visiblePreview.length > 0 && (
+							<ul className="space-y-2 mb-3">
+								{visiblePreview.map((email, idx) => (
+									<li
+										key={idx}
+										className="flex items-center justify-between gap-3 text-sm rounded-md px-3 py-2 bg-gray-50 dark:bg-gray-800"
+									>
+										<span className="text-gray-800 dark:text-gray-100 truncate">
+											{email.company_name}
+										</span>
+										<span
+											className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusPillClass(email.application_status)}`}
+										>
+											{email.application_status}
+										</span>
+									</li>
+								))}
+							</ul>
+						)}
+						{remaining > 0 && (
+							<p className="text-xs text-gray-400 mb-4 text-center">
+								+{remaining} more in your dashboard
+							</p>
+						)}
+
+						<hr className="my-5 border-gray-200 dark:border-gray-700" />
+
+						<div className="mb-5">
+							<FounderEmailCapture defaultEmail={userEmail} onSubmitted={() => setEmailSubmitted(true)} />
+						</div>
+
+						<Button
+							className="w-full"
+							color="primary"
+							size="lg"
+							variant={emailSubmitted ? "solid" : "bordered"}
+							onPress={handleGoToDashboard}
+						>
+							Go to my dashboard →
+						</Button>
 					</Card>
 				</main>
 			</>
@@ -1209,18 +1223,19 @@ function OnboardingContent() {
 
 	// Empty state — no emails found
 	if (screen === "empty-state") {
+		const isJobseeker = role === "jobseeker";
 		return (
 			<>
 				<Navbar />
 				<main className="flex-grow flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 					<Card>
-						<ProgressBar step={3} />
+						<ProgressBar step={isJobseeker ? 2 : 3} total={isJobseeker ? 2 : 3} />
 						<div className="text-center">
 							<div className="text-4xl mb-3">📭</div>
 							<h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
 								We didn&apos;t find any job-related emails
 							</h1>
-							<ul className="text-sm text-gray-500 dark:text-gray-400 text-left space-y-2 mb-6 mt-4">
+							<ul className="text-sm text-gray-500 dark:text-gray-400 text-left space-y-2 mb-5 mt-4">
 								<li>
 									• Is this the right Gmail account? You connected{" "}
 									<span className="font-medium text-gray-700 dark:text-gray-300">
@@ -1234,25 +1249,28 @@ function OnboardingContent() {
 									manually from the dashboard.
 								</li>
 							</ul>
-							<Button
-								className="w-full mb-3"
-								color="primary"
-								size="lg"
-								variant="flat"
-								onPress={handleConnectGmail}
-							>
-								Connect a different Gmail account
-							</Button>
-							<Button
-								className="w-full"
-								color="default"
-								size="lg"
-								variant="light"
-								onPress={handleGoToDashboard}
-							>
-								Go to dashboard anyway
-							</Button>
 						</div>
+						<div className="mb-5">
+							<FounderEmailCapture defaultEmail={userEmail} onSubmitted={() => setEmailSubmitted(true)} />
+						</div>
+						<Button
+							className="w-full mb-3"
+							color="primary"
+							size="lg"
+							variant="flat"
+							onPress={handleConnectGmail}
+						>
+							Connect a different Gmail account
+						</Button>
+						<Button
+							className="w-full"
+							color={emailSubmitted ? "primary" : "default"}
+							size="lg"
+							variant={emailSubmitted ? "solid" : "light"}
+							onPress={handleGoToDashboard}
+						>
+							Go to dashboard anyway
+						</Button>
 					</Card>
 				</main>
 			</>

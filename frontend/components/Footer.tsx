@@ -97,7 +97,7 @@ const Footer = () => {
 						) : (
 							<>
 								<p className="text-sm sm:text-base text-foreground">
-									Your job search moves fast. Let your tracker keep up.
+									Messy inbox? Stop losing recruiter emails.
 								</p>
 								<button
 									className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-600 transition-colors disabled:opacity-50"
