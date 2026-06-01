@@ -69,15 +69,15 @@ export default function FounderEmailCapture({ defaultEmail = "", onSubmitted }: 
 		<div className="rounded-xl border-2 border-primary/40 bg-primary/5 dark:bg-primary/10 p-5">
 			<h2 className="text-lg font-bold text-foreground mb-2">Help me help your job search</h2>
 			<p className="text-sm text-foreground/80 mb-4 leading-relaxed">
-				Hi! I&apos;m Lianna, the gal building JustAJobApp. My mission is to save you from spreadsheet hell. 😈
-				Real human feedback can never be automated, so can I email you to ask awkward questions sometimes? 🥺
-				👉👈
+				Hi! I&apos;m Lianna, the gal building JustAJobApp. My mission is to save you from spreadsheet hell.
+				<br /> 😈 <br />Real human feedback can never be automated, so can I email you to ask awkward
+				questions sometimes? 🥺 👉👈
 			</p>
 			<form className="flex flex-col sm:flex-row gap-2" onSubmit={handleSubmit}>
 				<Input
 					ref={inputRef}
 					aria-label="Email address"
-					className="flex-grow"
+					className="flex-grow dark:focus:text-gray-800"
 					errorMessage={invalid ? "Please enter a valid email address" : undefined}
 					isDisabled={state === "submitting"}
 					isInvalid={invalid}
